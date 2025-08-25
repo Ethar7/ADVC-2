@@ -1,0 +1,844 @@
+//movie.cs
+
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Demo
+{
+    internal class MovieEqualityComparer : IEqualityComparer<Movie>
+    {
+
+        public bool Equals(Movie? x, Movie? y)
+        {
+            return x?.Code.Equals(y?.Code)?? y is null ? true : false;
+        }
+
+        public  int GetHashCode(Movie obj)
+        {
+            return obj.Code.GetHashCode();
+            //Hashcode.Combine(Code);
+        }
+    }
+
+    internal class Movie :IEquatable<Movie>
+    {
+
+        public int Code {  get; set; }  
+
+        public string Title { get; set; }
+
+        public decimal Price { get; set; }  
+        public Movie(int code, string title, decimal price)
+        {
+            Code = code;
+            Title = title;
+            Price = price;
+        }
+
+
+        public override string ToString()
+        {
+            return $"Code {Code}   Title {Title}  Price {Price}";
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Code,Title,Price);
+        }
+
+        public bool Equals(Movie? other)
+        {
+            if(other is null) return false; 
+            return Code.Equals(other.Code) && Title.Equals(other.Title )&& Price.Equals(other.Price);
+        }
+    }
+}
+
+
+
+// program1.cs
+
+﻿using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Demo
+{
+    #region Old Way
+    class CustomeHashCodeProvider : IHashCodeProvider
+    {
+        public int GetHashCode(object obj)
+        {
+            string? s = obj as string;
+            if (s == null)
+                return 0;
+            return s.ToLower().GetHashCode();
+        }
+    }
+
+    class CustomeComparer : IComparer
+    {
+        public int Compare(object? x, object? y)
+        {
+            string? strx = x as string;
+            string? stry = y as string;
+
+            return strx?.ToLower().CompareTo(stry) ?? (stry is null ? 0 : -1);
+
+        }
+    }
+
+    #endregion
+
+    #region New Way
+    class StringEquality : IEqualityComparer
+    {
+        public new bool Equals(object? x, object? y)//Ast5dmt new 34an b3ml new implementation
+        {
+           
+                string? strx = x as string;
+                string? stry = y as string;
+
+                return strx?.ToLower().Equals(stry) ?? (stry is null ? true : false);
+
+        }
+
+        public int GetHashCode(object obj)
+        {
+            string? s = obj as string;
+            if (s == null)
+                return 0;
+            return s.ToLower().GetHashCode();
+        }
+    }
+    #endregion
+
+    class IntDecComparer : IComparer<int>
+    {
+        public int Compare(int x, int y)
+        {
+            return y.CompareTo(x);
+            //return y-x;//or
+            //return -y.CompareTo(x);
+        }
+    }
+
+    class StringDesComparer : IComparer<string>
+    {
+        public int Compare(string? x, string? y)
+        {
+            return y?.CompareTo(x)??(x is null  ? 0 : -1);
+        }
+    }
+
+    class EmployeeComparer : IEqualityComparer<Employee>
+    {
+      
+        public bool Equals(Employee? x, Employee? y)
+        {
+            return x?.Id.Equals(y?.Id)?? (y?.Id is null? false : true);
+        }
+
+        public int GetHashCode([DisallowNull] Employee obj)
+        {
+            return obj.Id.GetHashCode();
+        }
+    }
+
+    class Employee :  IComparable<Employee>, IEquatable<Employee>
+    {
+
+        public int Id { get; set; }
+        public string Name { get; set; }
+
+        public int Age { get; set; }
+        public Employee(int id, string name, int age)
+        {
+            Id = id;
+            Name = name;
+            Age = age;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id,Name,Age);   
+        }
+        public override bool Equals(object? obj) 
+        {
+            //hna hy7sal boxing and unboxing Fa 3mlt Interface Wro7t A3ml Implement
+            Employee? e = obj as Employee;
+            if(e is null)return false;
+            return Id.Equals(e.Id) && (Name?.Equals(e.Name)??(e.Name is null? false : true))&& Age.Equals(e.Age);
+            
+        }
+
+        // El2wla Yd5ol hna
+        public bool Equals(Employee? e)
+        {
+            if (e is null) return false;
+            return Id.Equals(e.Id) && (Name?.Equals(e.Name) ?? (e.Name is null ? false : true)) && Age.Equals(e.Age);
+        }
+       
+        public int CompareTo(Employee? y)
+        {
+            if (y is  null) return 1;
+            return Id.CompareTo(y.Id);
+
+        }
+        public override string ToString()
+        {
+            return $"{Id}:{Name}:{Age}";
+        }
+    }
+    internal class Program
+    {
+        static void Main()
+        {
+            #region Non Genaric Collections - Hashtable
+
+
+            ///     <collections of Key Value Pair>
+            ///{non genaric Hashtable , genaric Hashtable(Dictionary) ,Hashset  } use Hashtable Mechanism
+            ///sorted Dictionary uses Binary search tree
+            ///sorted set uses Balanced Binary search tree
+            ///sorted list uses 2 Array
+            ///3ndy 2 Interface  ILists,Idictioary by3mlo Inherit From ICollection
+            ///All collections of Key Value Pair Implement IDictionary
+
+
+            ///HashTable Searching in O(1)
+            ///Lazm A3mo override on Equals and Gethashcode
+
+
+            //string name = "Ahmed";
+            // Hashtable Note = new Hashtable()
+            // {
+            //
+            //     {/*name*/"Ahmed", 1333}, //1333boxing
+            //     { "Alaa", 1222 },
+            //     { "Sara", 1444 }
+            ///key of type object , value of type nullable object <non genaric>
+            /// parametrless constructor => loadfactor = 72%  ,capacity =0
+
+            // };
+
+            //Note.Add("Ahmed", 0000);//Invalied , key must be unique(Immutable)
+            //name = "mohamed";// create new string=Mohamed , Ahmed unreachabled object
+            // Note.Add("Ahmed",1999);//String Is An Immutable Type 
+
+            //foreach (DictionaryEntry person in Note) // DictionaryEntry  not var
+            // Console.WriteLine($"{person.Key}   :::   {person.Value}");
+            ///5d5ol gwa class Hashtable hn3rf hagat aktar
+            ///kol run trteb mo5tlf 34an gethashcode kol mra byb2a mo5tlf
+
+
+            #region Problem1 [Case Senstivity]
+            //Note.Add("ahmed", 1234);
+
+
+
+            //we have 2 ways : Old Way=> Hashtable(IHashcodeProvider?  x, IComparer y)  , New Way=> Hashtable(IEqualityComparer?)
+
+            ///Old
+            ///Hashtable Note = new Hashtable(new CustomeHashCodeProvider(),new CustomeComparer())
+            ///{
+            ///    {"Ahmed", 1333}, 
+            ///    { "Alaa", 1222 },
+            ///    { "Sara", 1444 }
+            ///};
+            ///
+
+            ///New
+            /// Hashtable Note = new Hashtable(new StringEquality())
+            /// {
+            ///     {"Ahmed", 1333},
+            ///     { "Alaa", 1222 },
+            ///     { "Sara", 1444 }
+            /// };
+            ///
+            /// foreach (DictionaryEntry person in Note) 
+            ///     Console.WriteLine($"{person.Key}   :::   {person.Value}");
+            ///Note.Add("alaa", 123);
+
+
+
+
+            #endregion
+
+            //Hashtable Note0 = new Hashtable(Note);
+            //foreach (DictionaryEntry person in Note0)
+            //Console.WriteLine($"{person.Key}:::   {person.Value}");
+
+
+            ///Add
+            ///unsafe
+            /// Note.Add("Ahmed", 111);
+            ///Safe
+            ///if (!Note.ContainsKey("Ahmed"))
+            ///    Note.Add("Ahmed", 111);
+            ///Note.TryAdd("Ahmed", 111); Only in Dictionary
+            ///Note["Manar"]=1322;  //Indexer
+            /// 
+
+            ///Get
+            /// Note.TryGetValue("Ahmed",out int val );//Only In Dictionary
+            /// 
+
+
+            //for (int i = 0; i <Note.Count; i++)
+            //{
+            //    Console.WriteLine(Note[i]);//m3 el dictionary m4 ht4t8l
+            //}
+
+            //data not sorted => use dictionary 
+            //data not sorted => use Hashtable  lw ana 3wza el key of different datatype w lw ht7km fl capacity w loadfactor 
+
+
+
+
+            #endregion
+
+            #region Genaric Collections - Dictionary [Hashtable]
+
+            #region Ex01
+
+            //Dictionary<string, int> Note = new Dictionary<string, int>()
+            //{
+            //    {"Alaa",1111 },
+            //    {"Ahmed",2222 },
+            //    {"Sara",3333 },
+            //
+            //};
+            //
+            ////Note.Add("Ahmed",1234); //It will throw Exception
+            //Dictionary<string, int> Note01 = new Dictionary<string, int>(Note);
+            //H3ml  Class Be Implement Genaric IEqualityComparer zy ma 3mlt fl hashtable
+            //Function El Equals WithouT new;
+            //Note01.Add("ahmed", 1478); //sa3tha da will throw Exception
+
+            //Contructor Number 7 
+            //KeyValuePair<string, int>[] keyValuePairs =
+            //{
+            //    new KeyValuePair<string, int>("Aly",123),
+            //    new KeyValuePair<string, int>("Anas",159),
+            //    new KeyValuePair<string, int>("Mohamed",958),
+            //
+            //};
+            //List <KeyValuePair<string, int>> keyValuePairs1 =new List<KeyValuePair<string, int>>()
+            //{
+            //    new KeyValuePair<string, int>("Marwa",123),
+            //    new KeyValuePair<string, int>("Amr",159),
+            //    new KeyValuePair<string, int>("Amany",958),
+            //
+            //};
+            //Note01 = new Dictionary<string, int>(keyValuePairs1);
+
+
+
+
+            //foreach (var key in Note01.Keys) //var
+            //{
+            //    Console.WriteLine($"{key}   :::   ");
+            //}
+
+            ///Add - Set
+            ///Note01["Manar"] = 1243;//Add Or Set
+            ///Note01.TryAdd("Ahmed", 15937); //return bool
+
+            ///Get 
+            ///if (Note01.ContainsKey("Alaa"))
+            ///    Console.WriteLine("Found");
+            ///Note.TryGetValue("Manar", out int Val);
+            ///Console.WriteLine(Val);
+            ///
+
+
+
+            //foreach (KeyValuePair<string, int> item in Note01) //var
+            //{
+            //    Console.WriteLine($"{item.Key}   :::   {item.Value}");
+            //}//nafs el trteb
+
+
+
+            ///Implement genaric Idictionary [Sorted Dictionary - Sorted List - Hashset - Sorted Set]
+
+
+            //lw ans 3rfa elcapacity roy a3mlha set
+
+            #endregion
+
+            #region Ex02
+
+            // Dictionary<Employee,string> emp = new Dictionary<Employee, string>(new EmployeeComparer() )
+            // {
+            //     { new Employee (10,"Ahmed",25),"Ahmed's Age = 25"},
+            //     { new Employee (20,"Yara",35),"Yara's Age = 35"},
+            // };
+
+            //  emp.Add(new(10, "Ahmed", 25), "Ahmed's Age = 25");
+            // hyd5lo 3andy 45an key bym4y bl get hashgode w equals wna m3mlt4 override 3leh
+            //emp.Add(new(10, "Alaa", 30), "Ahmed's Age = 25"); //Will Throw Exception
+
+
+            #region Common Errors
+            // Employee employee = new Employee(10, "Ahmed", 25);
+            // Dictionary<Employee, string> emp1 = new Dictionary<Employee, string>(new EmployeeComparer())
+            // {
+            //     { employee,"Ahmed's Age = 25"},
+            //     { new Employee (20,"Yara",35),"Yara's Age = 35"},
+            // };
+            // employee.Id = 50;
+            // emp.Add(employee, "Ahmed's Age = 25"); // Valeid w de Krsa
+            //// emp.Add(new(10, "Alaa", 30), "Ahmed's Age = 25");  //Invaleid 3ady
+
+
+
+            #endregion
+
+
+
+
+            #endregion
+
+
+            #endregion
+
+            #region SortedDictionary
+            //Based On Binary search Tree only Have Genaric Type 
+            //Right Node > Left Node 
+
+            #region Ex01
+            //SortedDictionary<string,int>S = new SortedDictionary<string, int>(new StringDesComparer()) 
+            //{
+            //    //besort Ascending 34an String Implement IComparer
+            //    //momkn A5leha Descending 3ady
+            //    { "Eyad", 123},
+            //    { "Omar", 321},
+            //    { "Ziad", 456},
+            //    { "Mona", 654},
+            //    { "Omran", 694},
+
+            //};
+            //// Adding  Retreving O(logn)
+            //foreach(var p in S) 
+            //{
+            //    Console.Write(p.Key);
+            //    Console.Write(" ");
+            //    Console.WriteLine(p.Value);
+            //} 
+            #endregion
+
+            #region Ex02
+            //SortedDictionary<Employee,string>sortedemployees= new SortedDictionary<Employee, string>()
+            //{
+            //    { new Employee (10,"Ahmed",25),"Ahmed's Age = 25"},
+            //    { new Employee (20,"Yara",35),"Yara's Age = 35"},
+            //    
+            //};  
+            //foreach (var item in sortedemployees)
+            //{
+            //    Console.WriteLine(item.Key);
+            //}
+
+
+
+            #endregion
+            #endregion
+
+            #region SortedList
+            //NonGenaric - Genaric;
+            //Two internal array
+            //retrieve O logn 
+            //insertion , remove O (n)
+            /*
+             Add
+             Contain Key
+             Contain Value
+             Remove
+             {tb3 IDictionary}
+             */
+
+            #region Ex01
+            //(Space)SortedList > sorted dictionary 
+            //when we wanna go throw items SortedList Faster than sorted dictionary
+            //
+
+            //SortedList<string,int> s= new SortedList<string, int>() 
+            //{
+            //   { "Eyad", 123},
+            //   { "Omar", 321},
+            //   { "Ziad", 456},
+            //   { "Mona", 654},
+            //   { "Omran", 694},
+            //};
+            //Console.WriteLine(s.GetKeyAtIndex(0));
+            //Console.WriteLine(s.GetValueAtIndex(0));
+            //Console.WriteLine();
+
+
+            //foreach (var item in s)
+            //{
+            //    Console.WriteLine($"{item.Key}  {item.Value}");
+            //}
+
+            #region Syntax Sugar
+            //int[] arr = { 12, 2, 5, 25, 3 };
+            //int x = arr[^2];
+            //int y = arr[^1];
+            //int []z = arr[1..4];//subset
+            //Console.WriteLine(x);
+            #endregion
+            #endregion
+
+            #region Ex02
+            //SortedList<int,string> sorted= new SortedList<int, string>(new IntDecComparer())
+            //{   {2,"two"}   ,
+            //    {3,"three"} ,
+            //    {1,"one"}   ,
+            //};
+            //
+            //
+            //foreach (var item in sorted)
+            //{
+            //    Console.Write(item.Key);
+            //    Console.Write(" ");
+            //    Console.WriteLine(item.Value);
+            //}
+            #endregion
+
+            #endregion
+
+            #region HashSet
+
+            //Values Unique
+            //{list array } implement IEnumerable
+            #region Ex01
+            //lazm Employee y3ml override ll gethashcode , Equal 
+            //Lw Ana 3ndy Primary Key OR ID m4 h7tag A3ml override on  gethashcode , Equal zy el ex da
+            //HashSet<Employee> Employee = new HashSet<Employee>()
+            //{
+            //    { new Employee (10,"Ahmed",25)},
+            //    { new Employee (20,"Yara",35)},
+            //
+            //};
+
+            #endregion
+
+            #region Ex02
+            // int[] arr = { 1, 2, 3, 4, 5, 6, 8, 5, 8, 4, 2, 5, 1 };
+            ////3ndy Constructor bya5od object from IEnumerable <>
+            //HashSet<int> num = new HashSet<int>()
+            //{
+            //    1,2, 3,4,5,6,7,8,8
+            //};
+            //
+            //num = new HashSet<int>(arr);
+            //foreach (var item in num)
+            //{
+            //    Console.WriteLine(item);
+            //}
+            #endregion
+
+            #region Ex03
+
+            // HashSet<Movie> movies = new HashSet<Movie>(new MovieEqualityComparer ());
+            //
+            // movies.Add(new Movie(101, "Black Adam", 120)  ) ;
+            // movies.Add(new Movie(102, "Awlad Rezk", 130)  ) ;
+            // movies.Add(new Movie(103, "Fatih Sultan", 150));
+            // movies.Add(new Movie(103, "Avatar", 120));
+            // movies.Add(new Movie(103, "Fatih Sultan", 120));
+            //
+            //
+            // foreach (var item in movies)
+            // {
+            //     Console.WriteLine(item);
+            // } 
+            #endregion
+
+
+            #endregion
+
+            #region Sorted Set
+
+            //Balanced Binary Search Tree
+
+            
+            #endregion
+
+
+
+        }
+    }
+}
+
+
+// program2.cs
+
+﻿using System.Collections;
+using System.Net.WebSockets;
+namespace Demo
+{
+    internal class Program
+    {
+        public static int  SummArrayList(ArrayList arrayList)
+        {
+            int sum = 0;
+            if(arrayList != null)
+            {
+                for(int i = 0; i < arrayList.Count; i++)
+                {
+                    //sum += arrayList[i];//Invalied  hya bta5od Object Fa Lazm A3,=ml Cating
+                    sum += (int)arrayList[i];
+                    //Unboxing, Boxing  Unsafe May Throw Exception
+                }
+
+                
+            }
+            return sum;
+
+        } 
+        public static int  SummList(List<int> list)
+        {
+            int sum = 0;
+            if(list != null)
+            {
+                for(int i = 0; i < list.Count; i++)
+                    sum += list[i];
+                                    
+            }
+            return sum;
+
+        }
+        static void Main()
+        {
+            //Non Genaric Collections => Arraylist , Sorted Array
+            //Collections Classified to Lists , Hashtable
+            //u MUST Use namespace System.Collections
+            #region ArrayList
+            //non Genaric List
+
+            //ArrayList arrayList = new ArrayList();
+            ////arrayList = > size =0
+
+            //arrayList.Add(1);
+            //// Constructs a ArrayList. The list is initially empty and has a capacity
+            //// of zero. Upon adding the first element to the list the capacity is
+            //// increased to _defaultCapacity=4, and then increased in multiples of two as required.
+
+            //arrayList.Add(2);
+            //arrayList.Add(3);
+            //arrayList.Add(4);
+            //arrayList.Add(5);
+            //arrayList.Add(6);
+
+            ////Add Range
+            //arrayList.AddRange(new int[] { 7, 8, 9, 1, 0 });
+
+            //foreach (var item in arrayList)
+            //{
+            //    Console.Write(item);
+            //    Console.Write(" ");
+            //}
+            //Console.WriteLine();
+            //Console.WriteLine($"Arraylist : Array Capacity = {arrayList.Capacity} Array Count = {arrayList.Count}");
+
+            //// lw Ana 3rfa Elcapacity Mn El2wl fa A5zno w 5las
+
+            //ArrayList arrayList1 = new ArrayList(5) { 0, 11, 2, 3, 4, };
+            //Console.WriteLine($"Arraylist1 : Array Capacity = {arrayList1.Capacity} Array Count = {arrayList1.Count}");
+            ////lw 3wza Add Hadd 3ady bs byms7 elold w y3ml create new array with double Elcapacity
+
+            //arrayList.TrimToSize();   //Deallocate | Free | Delete Unused bytes
+            //arrayList1.TrimToSize();  //Deallocate | Free | Delete Unused bytes
+            //                          //Create new Array Wth Size Bta3 El Heap 
+            //                          //Take Old ElementsOf The Array 
+            //                          //Old Array Now Id Is an Unreachable Object
+
+            /// ******   Disadvantaged    ******  \\
+            ///Boxing And Unboxing , Unsafe Casting   => 34an bta5od object
+            ///arraylist is hetrogeneous list  غير متجانسه 
+            ///Compiler Cannot Enforce Type Safety
+
+            //arrayList1.Add("Alaa");
+            //int sum = SummArrayList(arrayList1);
+            //Console.WriteLine(sum); 
+            #endregion
+
+            // Genaric Collections => list , Linked list , Stack , Queue , HashTable ,Hashsets , Dictionary
+
+            #region Genaric Collections : [Lists]
+
+            #region List
+            //List <int >Numbers = new List<int> ();
+
+            //Console.WriteLine($" : list Capacity = {Numbers.Capacity} list Count = {Numbers.Count}");
+
+            //Numbers.Add (1);
+            ////// Constructs a ArrayList. The list is initially empty and has a capacity
+            ////// of zero. Upon adding the first element to the list the capacity is
+            ////// increased to _defaultCapacity=4, and then increased in multiples of two as required.
+            //Numbers.AddRange(new int[] {  2, 3 ,4});
+            //Console.WriteLine($"list Capacity = {Numbers.Capacity} list Count = {Numbers.Count}");
+
+            //Numbers.Add(5);
+            ////Create New Array With Double Size Of old Array 
+            //Console.WriteLine($"list Capacity = {Numbers.Capacity} list Count = {Numbers.Count}");
+
+            //Numbers.TrimExcess();//Delete Unused Bytes
+            ////Create New ARRAY With Size = Count Of Elements 
+            ////Old List Become Unreachable Object 
+
+            //List <int >Num =new List<int> (5) { 1,2,3,4,5};
+
+            //Num.Add(10);//Create New Array With Double Size 
+
+            //                /*****Print*****/ 
+            ////foreach (int i in Num) 
+            ////{
+            ////    Console.Write($"{i} ");
+            ////}
+
+            ////for (int i = 0; i<Num.Count; i++) 
+            ////{
+            ////    Console.Write($"{Num[i]} ");
+            ////}
+
+
+            //int sum =SummList(Num);
+            //Console.WriteLine(sum);
+
+
+            #region List Methods
+            //  List<int> l1 = new List<int>(4) { 1, 2, 3, 4 };
+            ///Insert Insert Range
+            ///Console.WriteLine($"list : list Capacity = {l1.Capacity} list Count = {l1.Count}");
+            ///l1.AddRange(new int[] { 5, 6, 7 });
+            ///l1.Insert(6, 8);//Insert Element At Index 6
+            ///
+            ///Console.WriteLine("======================");
+            ///foreach(int i in l1) 
+            ///    Console.Write($"{ i} ");
+            ///Console.WriteLine();
+            ///
+            ///Console.WriteLine($"list : list Capacity = {l1.Capacity} list Count = {l1.Count}");
+            ///l1.Insert(6, 8);
+            ///foreach (int i in l1) 
+            ///    Console.Write($"{i} ");
+            ///Console.WriteLine();
+            ///Console.WriteLine($"list : list Capacity = {l1.Capacity} list Count = {l1.Count}");
+            /// Ana B3ml INsret zy el Add it will not  Throw Exception
+
+            ///int index=l1.BinarySearch(30);
+            ///30 Doesn't Exist So it Returns Negative List.Count+1 
+            ///Console.WriteLine(index);
+            ///foreach(int i in l1)
+            ///    Console.Write($"{i} ");
+            ///Console.WriteLine();
+            ///
+
+
+            //l1.Remove(1);// htms7 awl 1
+            //l1.RemoveAll(1);// htms7 kol 1
+            //l1.Clear();//Remove All Elements
+            //Console.WriteLine(l1.Contains(100));// returns True || fALSE
+            //int[] arr = new int[10]; 
+            //l1.CopyTo(arr, 2);// has 4 overloads
+            ////🤔
+            //l1.CopyTo(1,arr, 4,3);// Take From l1 [1,3] to arr startsfrom  index 4
+
+            //l1.EnsureCapacity(4); //hY4OF lw =4 Tmam lw l2 odamo 2 ways ama no y duplicate el capacity aw y4of ba2y kam 3la el capacity el ana b3tah => he will choose the shortest path 
+            //
+            //l1.LastIndexOf(1);//Last Appear of number 1 => it returns it's index lw hwa doesn't exist it returns -1
+            //l1.IndexOf(1);//First Appear of number 1 => it return it's index     lw hwa doesn't exist it returns -1 
+            //l1.Reverse();
+
+
+            //foreach (int i in l1)
+            //    Console.WriteLine($"{i} ");
+
+
+            #endregion
+
+
+            #endregion
+
+
+            #region Linked list
+
+            //LinkedList<int>l1 = new LinkedList<int>();//parameterless Constructor
+            //                                          //Head
+
+            //l1.AddFirst(1);
+            //l1.AddLast(2);
+            ////Console.WriteLine(l1.Count);
+
+            //LinkedListNode<int> AfterNode = l1.Find(1);
+            //l1.AddAfter(AfterNode, 5); //insret Node
+
+            //LinkedListNode<int>BeforeNode = l1.Find(2);
+            //l1.AddAfter(AfterNode, 5);
+
+
+            //foreach (int i in l1)
+            //    Console.WriteLine(i);
+
+            //Kepp in Mind Add > retrieve use Linkedlist
+
+s
+
+            #endregion
+
+            #region Stack
+
+            //Stack<int>stack = new Stack<int>(); //FILO
+            //stack.Push(1);
+            //stack.Push(2);
+            //stack.Push(3);
+
+            //foreach (int i in stack)
+            //    Console.WriteLine(i);
+
+            //// stack.Peek();//return the element on the top without delete it
+            //// stack.pop(); return the last elemnet on the top then delete it 
+
+            ////stack.TryPop(out int Element); //Returns Bool 
+
+
+            #endregion
+
+            #region Queue
+
+            //Queue<int> q = new Queue<int>();
+            //    q.Enqueue(1);
+            //    q.Enqueue(2);
+            //    q.Enqueue(3);
+            //    q.Enqueue(4);
+
+            //foreach (int i in q)
+            //    Console.WriteLine(i);
+
+            //Console.WriteLine("---------------------------------");
+            //Console.WriteLine(q.Peek());//Without Deleting it 
+
+            //q.Dequeue();
+            //q.Dequeue();
+            //q.Dequeue();
+            ////q.Dequeue();
+
+            //Console.WriteLine(q.TryPeek(out int result1));
+            //Console.WriteLine(q.TryDequeue(out int result));
+            #endregion
+
+            #endregion
+
+        }
+    }
+}
+
